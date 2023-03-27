@@ -56,8 +56,19 @@ public struct GeoPackage {
         }
     }
 
-    public func getGeometryForFeature(feature: Feature) -> Geometry {
-        return Geometry()
+    public func getGeometryForFeature(feature: Feature) throws -> Geometry {
+        let geo_column = try getGeometryColumn(layer: feature.layer)
+
+        let table = Table(feature.layer.name)
+        let fid = Expression<Int>("fid")
+        let geo_col = Expression<Blob>(geo_column.ColumnName)
+
+        let row = try db.pluck(table.filter(fid == feature.fid))
+        guard let row = row else {
+            throw GeoPackageError.NoResultsFound
+        }
+
+        return try Geometry(type: geo_column.GeometryType, rawbytes: row[geo_col])
     }
 
     func getGeometryColumn(layer: Layer) throws -> GeometryColumn {

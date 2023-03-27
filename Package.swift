@@ -11,13 +11,15 @@ let package = Package(
             targets: ["GeoPackage"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/stephencelis/SQLite.swift.git", from: "0.14.1")
+        .package(url: "https://github.com/stephencelis/SQLite.swift.git", from: "0.14.1"),
+        .package(url: "https://github.com/fwcd/swift-binary-coder", from: "0.0.1")
     ],
     targets: [
         .target(
             name: "GeoPackage",
             dependencies: [
-                .product(name: "SQLite", package: "SQLite.swift")
+                .product(name: "SQLite", package: "SQLite.swift"),
+                .product(name: "BinaryCoder", package: "swift-binary-coder")
             ]),
         .testTarget(
             name: "GeoPackageTests",
@@ -26,6 +28,7 @@ let package = Package(
                 .copy("Resources/empty.gpkg"),
                 .copy("Resources/simple.gpkg"),
                 .copy("Resources/multiple_features.gpkg"),
+                .copy("Resources/poly.gpkg"),
             ]
         ),
     ]

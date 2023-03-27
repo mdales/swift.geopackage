@@ -8,6 +8,15 @@
         "revision" : "7a2e3cd27de56f6d396e84f63beefd0267b55ccb",
         "version" : "0.14.1"
       }
+    },
+    {
+      "identity" : "swift-binary-coder",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/fwcd/swift-binary-coder",
+      "state" : {
+        "revision" : "5270e91c53e2b75a32c8383de74743233d8aab7a",
+        "version" : "0.0.1"
+      }
     }
   ],
   "version" : 2
