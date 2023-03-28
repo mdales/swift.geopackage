@@ -53,7 +53,7 @@ final class GeoPackageTests: XCTestCase {
         // contains a rectangular polygon of bounds (-12.5, 10.3) to (-11.6, -5.4)
 
         let url = Bundle.module.url(
-            forResource: "poly",
+            forResource: "polygon",
             withExtension: "gpkg")!
         let package = try GeoPackage(url.path)
 
