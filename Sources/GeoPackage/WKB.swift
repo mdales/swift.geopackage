@@ -140,12 +140,31 @@ public struct WKBPoint: WKBBase, Decodable {
 	}
 }
 
-public struct WKBLineString: WKBBase {
+public struct WKBLineString: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
 	public let numPoints: UInt32
 	public let points: [Point]
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+
+		self.byteOrder = try container.decode(WKBByteOrder.self)
+		self.type = try container.decode(WKBGeometryType.self)
+		guard self.type == .LineString else {
+			throw WKBError.DecodingWrongType(got: self.type, expected: .LineString)
+		}
+
+		self.numPoints = try container.decode(UInt32.self).byteSwapped
+
+		var points: [Point] = []
+		for _ in 0..<self.numPoints {
+			let point = try container.decode(Point.self)
+			points.append(point)
+		}
+		self.points = points
+	}
 }
 
 public struct WKBPolygon: WKBBase, Decodable {
@@ -175,20 +194,58 @@ public struct WKBPolygon: WKBBase, Decodable {
 	}
 }
 
-public struct WKBMultiPoint: WKBBase {
+public struct WKBMultiPoint: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
 	public let numWkbPoints: UInt32
 	public let WKBPoints: [WKBPoint]
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+
+		self.byteOrder = try container.decode(WKBByteOrder.self)
+		self.type = try container.decode(WKBGeometryType.self)
+		guard self.type == .MultiPoint else {
+			throw WKBError.DecodingWrongType(got: self.type, expected: .MultiPoint)
+		}
+
+		self.numWkbPoints = try container.decode(UInt32.self).byteSwapped
+
+		var points: [WKBPoint] = []
+		for _ in 0..<self.numWkbPoints {
+			let point = try container.decode(WKBPoint.self)
+			points.append(point)
+		}
+		self.WKBPoints = points
+	}
 }
 
-public struct WKBMultiLineString: WKBBase {
+public struct WKBMultiLineString: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
 	public let numWkbLineStrings: UInt32
 	public let WKBLineStrings: [WKBLineString]
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+
+		self.byteOrder = try container.decode(WKBByteOrder.self)
+		self.type = try container.decode(WKBGeometryType.self)
+		guard self.type == .MultiLineString else {
+			throw WKBError.DecodingWrongType(got: self.type, expected: .MultiLineString)
+		}
+
+		self.numWkbLineStrings = try container.decode(UInt32.self).byteSwapped
+
+		var lines: [WKBLineString] = []
+		for _ in 0..<self.numWkbLineStrings {
+			let line = try container.decode(WKBLineString.self)
+			lines.append(line)
+		}
+		self.WKBLineStrings = lines
+	}
 }
 
 public struct WKBMultiPolygon: WKBBase, Decodable {
@@ -243,8 +300,14 @@ public func loadGeometryFromData(_ data: Data) throws -> WKBBase {
 		return try decoder.decode(WKBPoint.self, from: data)
 	case .Polygon:
 		return try decoder.decode(WKBPolygon.self, from: data)
+	case .LineString:
+		return try decoder.decode(WKBLineString.self, from: data)
+	case .MultiPoint:
+		return try decoder.decode(WKBMultiPoint.self, from: data)
 	case .MultiPolygon:
 		return try decoder.decode(WKBMultiPolygon.self, from: data)
+	case .MultiLineString:
+		return try decoder.decode(WKBMultiLineString.self, from: data)
 	default:
 		throw WKBError.NotImplemented(header.type)
 	}

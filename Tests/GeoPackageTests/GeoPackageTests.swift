@@ -54,6 +54,38 @@ final class GeoPackageTests: XCTestCase {
         }
     }
 
+    func testMultiPointPackage() throws {
+        let url = Bundle.module.url(
+            forResource: "multi_point",
+            withExtension: "gpkg")!
+        let package = try GeoPackage(url.path)
+
+        let layers = try package.getLayers()
+        XCTAssertEqual(layers.count, 1, "Expected one layer")
+
+        let features = try package.getFeaturesForLayer(layer: layers.first!)
+        XCTAssertEqual(features.count, 1, "Expected one feature")
+
+        let geometry = try package.getGeometryForFeature(feature: features.first!)
+        XCTAssertEqual(geometry.type, .MultiPoint, "Expected multipoint")
+        XCTAssertEqual(geometry.envelope, [-12.3, -11.5, -5.4, 10.2], "Expected x,y envelope")
+        XCTAssertEqual(geometry.srs_id, 4326, "Unexpected SRS ID")
+
+        XCTAssertEqual(geometry.geometry.type, .MultiPoint, "Expected a multipoint")
+        let multipoint = geometry.geometry as! WKBMultiPoint
+        XCTAssertEqual(multipoint.type, .MultiPoint, "Also expected polygon")
+        XCTAssertEqual(multipoint.numWkbPoints, 4, "Expected four points")
+        XCTAssertEqual(Int(multipoint.numWkbPoints), multipoint.WKBPoints.count, "Internal consistency error for points")
+
+        let expectedPoints = [
+            Point(x: -12.3, y: 10.2),
+            Point(x: -11.5, y: 10.2),
+            Point(x: -11.5, y: -5.4),
+            Point(x: -12.3, y: -5.4)
+        ]
+        XCTAssertEqual(multipoint.WKBPoints.map { $0.point }, expectedPoints, "Points don't match")
+    }
+
     func testPolygonPackage() throws {
         let url = Bundle.module.url(
             forResource: "polygon",
