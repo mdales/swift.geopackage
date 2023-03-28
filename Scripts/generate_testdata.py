@@ -78,6 +78,53 @@ def make_simple_polygon():
 
 	package.Destroy()
 
+def make_multi_polygon():
+	multipoly = ogr.Geometry(ogr.wkbMultiPolygon)
+	multipoly.FlattenTo2D()
+	srs = ogr.osr.SpatialReference()
+	srs.ImportFromEPSG(4326)
+
+	areas = [
+		Area(
+			left=-12.3,
+			top=10.2,
+			right=-11.5,
+			bottom=-5.4
+		),
+		Area(
+			left=42.0,
+			top=-39.6,
+			right=45.6,
+			bottom=-42.1
+		)
+	]
+
+	for area in areas:
+		poly = ogr.Geometry(ogr.wkbPolygon)
+		poly.FlattenTo2D()
+		geometry = ogr.Geometry(ogr.wkbLinearRing)
+		geometry.AddPoint_2D(area.left, area.top)
+		geometry.AddPoint_2D(area.right, area.top)
+		geometry.AddPoint_2D(area.right, area.bottom)
+		geometry.AddPoint_2D(area.left, area.bottom)
+		geometry.AddPoint_2D(area.left, area.top)
+		poly.AddGeometry(geometry)
+		multipoly.AddGeometry(poly)
+
+	package = ogr.GetDriverByName("GPKG").CreateDataSource('multi_polygon.gpkg')
+	layer = package.CreateLayer("onlylayer", srs, geom_type=ogr.wkbMultiPolygon)
+	id_field = ogr.FieldDefn("id_no", ogr.OFTInteger)
+	layer.CreateField(id_field)
+
+	feature_definition = layer.GetLayerDefn()
+	feature = ogr.Feature(feature_definition)
+	feature.SetGeometry(multipoly)
+	feature.SetField("id_no", 42)
+	layer.CreateFeature(feature)
+
+	package.Destroy()
+
+
 def make_multiple_features():
 	point = ogr.Geometry(ogr.wkbPoint)
 	point.FlattenTo2D()
@@ -111,4 +158,5 @@ if __name__ == "__main__":
 	make_empty()
 	make_simple_point()
 	make_simple_polygon()
+	make_multi_polygon()
 	make_multiple_features()

@@ -29,6 +29,7 @@ let package = Package(
                 .copy("Resources/simple.gpkg"),
                 .copy("Resources/multiple_features.gpkg"),
                 .copy("Resources/polygon.gpkg"),
+                .copy("Resources/multi_polygon.gpkg"),
             ]
         ),
     ]

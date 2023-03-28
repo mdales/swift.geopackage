@@ -191,12 +191,31 @@ public struct WKBMultiLineString: WKBBase {
 	public let WKBLineStrings: [WKBLineString]
 }
 
-public struct WKBMultiPolygon: WKBBase {
+public struct WKBMultiPolygon: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
 	public let numWkbPolygons: UInt32;
 	public let wkbPolygons: [WKBPolygon]
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+
+		self.byteOrder = try container.decode(WKBByteOrder.self)
+		self.type = try container.decode(WKBGeometryType.self)
+		guard self.type == .MultiPolygon else {
+			throw WKBError.DecodingWrongType(got: self.type, expected: .MultiPolygon)
+		}
+
+		self.numWkbPolygons = try container.decode(UInt32.self).byteSwapped
+
+		var polygons: [WKBPolygon] = []
+		for _ in 0..<self.numWkbPolygons {
+			let polygon = try container.decode(WKBPolygon.self)
+			polygons.append(polygon)
+		}
+		self.wkbPolygons = polygons
+	}
 }
 
 public struct WKBGeometryCollection: WKBBase {
@@ -224,6 +243,8 @@ public func loadGeometryFromData(_ data: Data) throws -> WKBBase {
 		return try decoder.decode(WKBPoint.self, from: data)
 	case .Polygon:
 		return try decoder.decode(WKBPolygon.self, from: data)
+	case .MultiPolygon:
+		return try decoder.decode(WKBMultiPolygon.self, from: data)
 	default:
 		throw WKBError.NotImplemented(header.type)
 	}

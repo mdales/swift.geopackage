@@ -91,4 +91,28 @@ final class GeoPackageTests: XCTestCase {
         ]
         XCTAssertEqual(ring.points, expectedPoints, "Points don't match")
     }
+
+    func testMultiPolygonPackage() throws {
+        let url = Bundle.module.url(
+            forResource: "multi_polygon",
+            withExtension: "gpkg")!
+        let package = try GeoPackage(url.path)
+
+        let layers = try package.getLayers()
+        XCTAssertEqual(layers.count, 1, "Expected one layer")
+
+        let features = try package.getFeaturesForLayer(layer: layers.first!)
+        XCTAssertEqual(features.count, 1, "Expected one feature")
+
+        let geometry = try package.getGeometryForFeature(feature: features.first!)
+        XCTAssertEqual(geometry.type, .MultiPolygon, "Expected multi polygon")
+        XCTAssertEqual(geometry.envelope, [-12.3, 45.6, -42.1, 10.2], "Expected x,y envelope")
+        XCTAssertEqual(geometry.srs_id, 4326, "Unexpected SRS ID")
+
+        XCTAssertEqual(geometry.geometry.type, .MultiPolygon, "Expected a multi polygon")
+        let polygon = geometry.geometry as! WKBMultiPolygon
+        XCTAssertEqual(polygon.type, .MultiPolygon, "Also expected multi polygon")
+        XCTAssertEqual(polygon.numWkbPolygons, 2, "Expected two polygons")
+        XCTAssertEqual(Int(polygon.numWkbPolygons), polygon.wkbPolygons.count, "Internal consistency error for polygons")
+    }
 }
