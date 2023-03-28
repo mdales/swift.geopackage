@@ -13,12 +13,12 @@ enum WKBError: Error {
 
 // Each geometry struct has a fixed preeamble to declare the type
 // and byte order
-public enum WKBByteOrder: UInt8, Codable {
+public enum WKBByteOrder: UInt8, Decodable {
 	case BigEndian = 0
 	case LittleEndian = 1
 };
 
-public enum WKBGeometryType: UInt32, Codable {
+public enum WKBGeometryType: UInt32, Decodable {
 	case Point = 1
 	case LineString = 2
 	case Polygon = 3
@@ -70,13 +70,13 @@ public protocol WKBBase {
 	var type: WKBGeometryType { get }
 }
 
-struct WKBPreamble: WKBBase, Codable {
+struct WKBPreamble: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 }
 
 // Basic data types used in the structs
-public struct Point: Codable, Equatable {
+public struct Point: Decodable, Equatable {
 	public let x: Double
 	public let y: Double
 
@@ -98,7 +98,7 @@ public struct Point: Codable, Equatable {
 	}
 }
 
-public struct LinearRing: Codable {
+public struct LinearRing: Decodable {
 	public let numPoints: UInt32
 	public let points: [Point]
 
@@ -121,7 +121,7 @@ public struct LinearRing: Codable {
 }
 
 // The actual geometry definitions
-public struct WKBPoint: WKBBase, Codable {
+public struct WKBPoint: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
@@ -148,7 +148,7 @@ public struct WKBLineString: WKBBase {
 	public let points: [Point]
 }
 
-public struct WKBPolygon: WKBBase, Codable {
+public struct WKBPolygon: WKBBase, Decodable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 

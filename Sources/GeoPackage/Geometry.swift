@@ -24,7 +24,7 @@ public enum GeometryType: String {
 	case Surface = "SURFACE"
 }
 
-struct GeoPackageBinaryHeader: Codable {
+struct GeoPackageBinaryHeader: Decodable {
 	let magic: UInt16
 	let version: UInt8
 	let flags: UInt8
