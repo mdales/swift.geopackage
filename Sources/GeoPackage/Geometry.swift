@@ -36,6 +36,7 @@ enum GeometryError: Error {
 	case DataTooSmallForEnvelope
 	case MissingHeaderMagic
 	case BigEndianNotSupported
+	case NotImplementedYet
 	case EnvelopeTypeInvalid(UInt8)
 }
 
@@ -94,8 +95,13 @@ public struct Geometry {
 			self.envelope = []
 		}
 
-		// now the envelope is out the way, load the actual geometry
-		let payload = Data(rawbytes.bytes[header_size+envelope_size..<rawbytes.bytes.count])
-		self.geometry = try loadGeometryFromData(payload)
+		if header.flags & 0x10 == 0x00 {
+			// now the envelope is out the way, load the actual geometry
+			let payload = Data(rawbytes.bytes[header_size+envelope_size..<rawbytes.bytes.count])
+			self.geometry = try loadGeometryFromData(payload)
+		} else {
+			throw GeometryError.NotImplementedYet
+		}
+
 	}
 }

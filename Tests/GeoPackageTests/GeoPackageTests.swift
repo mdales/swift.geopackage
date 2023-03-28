@@ -27,6 +27,11 @@ final class GeoPackageTests: XCTestCase {
         XCTAssertEqual(geometry.type, .Point, "Expected point")
         XCTAssertEqual(geometry.envelope.count, 0, "Expected just x,y envelope")
         XCTAssertEqual(geometry.srs_id, 4326, "Unexpected SRS ID")
+
+        XCTAssertEqual(geometry.geometry.type, .Point, "Expected a point")
+        let point = geometry.geometry as! WKBPoint
+        XCTAssertEqual(point.type, .Point, "Also expected point")
+        XCTAssertEqual(point.point, Point(x: 2.0, y: 3.0), "Unexpected point value")
     }
 
     func testMultiFeaturePackage() throws {
@@ -50,8 +55,6 @@ final class GeoPackageTests: XCTestCase {
     }
 
     func testPolygonPackage() throws {
-        // contains a rectangular polygon of bounds (-12.5, 10.3) to (-11.6, -5.4)
-
         let url = Bundle.module.url(
             forResource: "polygon",
             withExtension: "gpkg")!
@@ -65,9 +68,27 @@ final class GeoPackageTests: XCTestCase {
 
         let geometry = try package.getGeometryForFeature(feature: features.first!)
         XCTAssertEqual(geometry.type, .Polygon, "Expected polygon")
-        XCTAssertEqual(geometry.envelope, [-12.5, -11.6, -5.4, 10.3, 0.0, 0.0], "Expected x,y,z envelope")
+        XCTAssertEqual(geometry.envelope, [-12.3, -11.5, -5.4, 10.2], "Expected x,y envelope")
         XCTAssertEqual(geometry.srs_id, 4326, "Unexpected SRS ID")
 
+        XCTAssertEqual(geometry.geometry.type, .Polygon, "Expected a polygon")
+        let polygon = geometry.geometry as! WKBPolygon
+        XCTAssertEqual(polygon.type, .Polygon, "Also expected polygon")
+        XCTAssertEqual(polygon.numRings, 1, "Expected one ring")
+        XCTAssertEqual(Int(polygon.numRings), polygon.rings.count, "Internal consistency error for rings")
 
+        let ring = polygon.rings[0]
+        XCTAssertEqual(ring.numPoints, 5, "Expected 5 points")
+        XCTAssertEqual(Int(ring.numPoints), ring.points.count, "Internal consistncy error for ring points")
+
+
+        let expectedPoints = [
+            Point(x: -12.3, y: 10.2),
+            Point(x: -11.5, y: 10.2),
+            Point(x: -11.5, y: -5.4),
+            Point(x: -12.3, y: -5.4),
+            Point(x: -12.3, y: 10.2)
+        ]
+        XCTAssertEqual(ring.points, expectedPoints, "Points don't match")
     }
 }

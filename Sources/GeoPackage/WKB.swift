@@ -7,6 +7,7 @@ enum WKBError: Error {
 	case TypeNotRecognised(UInt32)
 	case EndianNotSupprted(WKBByteOrder)
 	case NotImplemented(WKBGeometryType)
+	case DecodingWrongType(got: WKBGeometryType, expected: WKBGeometryType)
 }
 
 
@@ -75,28 +76,68 @@ struct WKBPreamble: WKBBase, Codable {
 }
 
 // Basic data types used in the structs
-public struct Point {
-	public let byteOrder: WKBByteOrder
-	public let type: WKBGeometryType
-
+public struct Point: Codable, Equatable {
 	public let x: Double
 	public let y: Double
+
+	public init(x: Double, y: Double) {
+		self.x = x
+		self.y = y
+	}
+
+	public init(from decoder: Decoder) throws {
+		// The data is meant to be streamed, rather than disk-read, which
+		// means the bytes are the wrong way around
+		var container = try decoder.unkeyedContainer()
+		let tempx = try container.decode(Double.self)
+		let swappedx = CFSwappedFloat64(v: tempx.bitPattern.littleEndian)
+		self.x = CFConvertDoubleSwappedToHost(swappedx)
+		let tempy = try container.decode(Double.self)
+		let swappedy = CFSwappedFloat64(v: tempy.bitPattern.littleEndian)
+		self.y = CFConvertDoubleSwappedToHost(swappedy)
+	}
 }
 
-public struct LinearRing {
-	public let byteOrder: WKBByteOrder
-	public let type: WKBGeometryType
-
+public struct LinearRing: Codable {
 	public let numPoints: UInt32
 	public let points: [Point]
+
+	public init(_ points: [Point]) {
+		self.numPoints = UInt32(points.count)
+		self.points = points
+	}
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+		self.numPoints = try container.decode(UInt32.self).byteSwapped
+
+		var points: [Point] = []
+		for _ in 0..<self.numPoints {
+			let point = try container.decode(Point.self)
+			points.append(point)
+		}
+		self.points = points
+	}
 }
 
 // The actual geometry definitions
-public struct WKBPoint: WKBBase {
+public struct WKBPoint: WKBBase, Codable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
 	public let point: Point
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+
+		self.byteOrder = try container.decode(WKBByteOrder.self)
+		self.type = try container.decode(WKBGeometryType.self)
+		guard self.type == .Point else {
+			throw WKBError.DecodingWrongType(got: self.type, expected: .Point)
+		}
+
+		self.point = try container.decode(Point.self)
+	}
 }
 
 public struct WKBLineString: WKBBase {
@@ -107,12 +148,31 @@ public struct WKBLineString: WKBBase {
 	public let points: [Point]
 }
 
-public struct WKBPolygon: WKBBase {
+public struct WKBPolygon: WKBBase, Codable {
 	public let byteOrder: WKBByteOrder
 	public let type: WKBGeometryType
 
 	public let numRings: UInt32
 	public let rings: [LinearRing]
+
+	public init(from decoder: Decoder) throws {
+		var container = try decoder.unkeyedContainer()
+
+		self.byteOrder = try container.decode(WKBByteOrder.self)
+		self.type = try container.decode(WKBGeometryType.self)
+		guard self.type == .Polygon else {
+			throw WKBError.DecodingWrongType(got: self.type, expected: .Polygon)
+		}
+
+		self.numRings = try container.decode(UInt32.self).byteSwapped
+
+		var rings: [LinearRing] = []
+		for _ in 0..<self.numRings {
+			let ring = try container.decode(LinearRing.self)
+			rings.append(ring)
+		}
+		self.rings = rings
+	}
 }
 
 public struct WKBMultiPoint: WKBBase {
@@ -160,9 +220,11 @@ public func loadGeometryFromData(_ data: Data) throws -> WKBBase {
 	}
 
 	switch header.type {
+	case .Point:
+		return try decoder.decode(WKBPoint.self, from: data)
+	case .Polygon:
+		return try decoder.decode(WKBPolygon.self, from: data)
 	default:
 		throw WKBError.NotImplemented(header.type)
 	}
-
-	return header
 }

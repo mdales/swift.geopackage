@@ -12,14 +12,14 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/stephencelis/SQLite.swift.git", from: "0.14.1"),
-        .package(url: "https://github.com/fwcd/swift-binary-coder", from: "0.0.1")
+        .package(url: "https://github.com/fwcd/swift-binary-coder", from: "0.0.1"),
     ],
     targets: [
         .target(
             name: "GeoPackage",
             dependencies: [
                 .product(name: "SQLite", package: "SQLite.swift"),
-                .product(name: "BinaryCoder", package: "swift-binary-coder")
+                .product(name: "BinaryCoder", package: "swift-binary-coder"),
             ]),
         .testTarget(
             name: "GeoPackageTests",
