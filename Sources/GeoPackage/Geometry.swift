@@ -10,7 +10,7 @@ public enum GeometryType: String {
 	case LineString = "LINESTRING"
 	case Polygon = "POLYGON"
 	case MultiPoint = "MULTIPOINT"
-	case MultiString = "MULTISTRING"
+	case MultiLineString = "MULTILINESTRING"
 	case MultiPolygon = "MULTIPOLYGON"
 	case GeometryCollection = "GEOMETRYCOLLECTION"
 

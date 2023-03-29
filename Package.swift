@@ -31,6 +31,8 @@ let package = Package(
                 .copy("Resources/multiple_features.gpkg"),
                 .copy("Resources/polygon.gpkg"),
                 .copy("Resources/multi_polygon.gpkg"),
+                .copy("Resources/linestring.gpkg"),
+                .copy("Resources/multi_linestring.gpkg")
             ]
         ),
     ]

@@ -147,4 +147,61 @@ final class GeoPackageTests: XCTestCase {
         XCTAssertEqual(polygon.numWkbPolygons, 2, "Expected two polygons")
         XCTAssertEqual(Int(polygon.numWkbPolygons), polygon.wkbPolygons.count, "Internal consistency error for polygons")
     }
+
+    func testLineStringPackage() throws {
+        let url = Bundle.module.url(
+            forResource: "linestring",
+            withExtension: "gpkg")!
+        let package = try GeoPackage(url.path)
+
+        let layers = try package.getLayers()
+        XCTAssertEqual(layers.count, 1, "Expected one layer")
+
+        let features = try package.getFeaturesForLayer(layer: layers.first!)
+        XCTAssertEqual(features.count, 1, "Expected one feature")
+
+        let geometry = try package.getGeometryForFeature(feature: features.first!)
+        XCTAssertEqual(geometry.type, .LineString, "Expected linestring")
+        XCTAssertEqual(geometry.envelope, [-12.3, -11.5, -5.4, 10.2], "Expected x,y envelope")
+        XCTAssertEqual(geometry.srs_id, 4326, "Unexpected SRS ID")
+
+        XCTAssertEqual(geometry.geometry.type, .LineString, "Expected a linestring")
+        let linestring = geometry.geometry as! WKBLineString
+        XCTAssertEqual(linestring.type, .LineString, "Also expected linestring")
+        XCTAssertEqual(linestring.numPoints, 4, "Expected one ring")
+        XCTAssertEqual(Int(linestring.numPoints), linestring.points.count, "Internal consistency error for points")
+
+        let expectedPoints = [
+            Point(x: -12.3, y: 10.2),
+            Point(x: -11.5, y: 10.2),
+            Point(x: -11.5, y: -5.4),
+            Point(x: -12.3, y: -5.4)
+        ]
+        XCTAssertEqual(linestring.points, expectedPoints, "Points don't match")
+    }
+
+    func testMultiLineStringPackage() throws {
+        let url = Bundle.module.url(
+            forResource: "multi_linestring",
+            withExtension: "gpkg")!
+        let package = try GeoPackage(url.path)
+
+        let layers = try package.getLayers()
+        XCTAssertEqual(layers.count, 1, "Expected one layer")
+
+        let features = try package.getFeaturesForLayer(layer: layers.first!)
+        XCTAssertEqual(features.count, 1, "Expected one feature")
+
+        let geometry = try package.getGeometryForFeature(feature: features.first!)
+        XCTAssertEqual(geometry.type, .MultiLineString, "Expected multi linestring")
+        XCTAssertEqual(geometry.envelope, [-12.3, 45.6, -42.1, 10.2], "Expected x,y envelope")
+        XCTAssertEqual(geometry.srs_id, 4326, "Unexpected SRS ID")
+
+        XCTAssertEqual(geometry.geometry.type, .MultiLineString, "Expected a linestring")
+        let multi_linestring = geometry.geometry as! WKBMultiLineString
+        XCTAssertEqual(multi_linestring.type, .MultiLineString, "Also expected linestring")
+        XCTAssertEqual(multi_linestring.numWkbLineStrings, 2, "Expected two linestrings")
+        XCTAssertEqual(Int(multi_linestring.numWkbLineStrings), multi_linestring.WKBLineStrings.count, "Internal consistency error for linestrings")
+
+    }
 }
