@@ -32,15 +32,33 @@ public struct GeoPackage {
         let data_type = Expression<String>("data_type")
         let srs_id = Expression<Int>("srs_id")
 
-        return try db.prepare(table).map {
-            let datatypestr = $0[data_type]
+        return try db.prepare(table).map { res in
+            let datatypestr = res[data_type]
+
             guard let datatype = LayerDataType.init(rawValue: datatypestr) else {
                 throw GeoPackageError.MalformattedDataType(datatypestr)
             }
+
+            let columns = try self.db.schema.columnDefinitions(table: res[name])
             return Layer(
-                name: $0[name],
+                name: res[name],
                 dataType: datatype,
-                SRSID: $0[srs_id]
+                SRSID: res[srs_id],
+                // columns: [:]
+                columns: columns.reduce(into: [String:any ExpressionType]()) {
+                    switch $1.type {
+                    case .INTEGER:
+                        $0[$1.name] = Expression<Int>($1.name)
+                    case .REAL:
+                        $0[$1.name] = Expression<Double>($1.name)
+                    case .TEXT:
+                        $0[$1.name] = Expression<String>($1.name)
+                    case .BLOB:
+                        $0[$1.name] = Expression<Data>($1.name)
+                    case .NUMERIC:
+                        $0[$1.name] = Expression<Double>($1.name)
+                    }
+                }
             )
         }
     }
@@ -49,6 +67,17 @@ public struct GeoPackage {
         let table = Table(layer.name)
         let fid = Expression<Int>("fid")
         return try db.prepare(table).map {
+            return Feature(
+                layer: layer,
+                fid: $0[fid]
+            )
+        }
+    }
+
+    public func getFeaturesForLayer(layer: Layer, predicate: Expression<Bool>) throws -> [Feature] {
+        let table = Table(layer.name)
+        let fid = Expression<Int>("fid")
+        return try db.prepare(table.filter(predicate)).map {
             return Feature(
                 layer: layer,
                 fid: $0[fid]
