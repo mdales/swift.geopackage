@@ -9,9 +9,9 @@ public enum LayerDataType: String {
 }
 
 public struct Layer {
-	let name: String
-	let dataType: LayerDataType
-	let SRSID: Int
+	public let name: String
+	public let dataType: LayerDataType
+	public let SRSID: Int
 
-	let columns: [String:any ExpressionType]
+	public let columns: [String:any ExpressionType]
 }

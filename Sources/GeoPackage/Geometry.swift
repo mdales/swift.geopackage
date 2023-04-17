@@ -41,11 +41,11 @@ enum GeometryError: Error {
 }
 
 public struct Geometry {
-	let type: GeometryType
-	let srs_id: Int
-	let envelope: [Double]
+	public let type: GeometryType
+	public let srs_id: Int
+	public let envelope: [Double]
 
-	let geometry: WKBBase
+	public let geometry: WKBBase
 
 	init(type: GeometryType, rawbytes: Blob) throws {
 		self.type = type

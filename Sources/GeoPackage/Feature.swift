@@ -1,4 +1,4 @@
 public struct Feature {
-	let layer: Layer
-	let fid: Int
+	public let layer: Layer
+	public let fid: Int
 }
