@@ -75,6 +75,24 @@ struct WKBPreamble: WKBBase, Decodable {
 	public let type: WKBGeometryType
 }
 
+func byteSwapDouble(_ val: Double) -> Double {
+#if canImport(Darwin)
+	let swapped = CFSwappedFloat64(v: val.bitPattern.littleEndian)
+	return CFConvertDoubleSwappedToHost(swapped)
+#else
+	var temp = val // can't get withUnsafeBytes on a const
+	var swapped: Double = 0.0
+	withUnsafeMutableBytes(of: &swapped) { outptr in
+		withUnsafeBytes(of: &temp) { inptr in
+			for index in 0..<MemoryLayout<Double>.size {
+				outptr[MemoryLayout<Double>.size - (index + 1)] = inptr[index]
+			}
+		}
+	}
+	return swapped
+#endif
+}
+
 // Basic data types used in the structs
 public struct Point: Decodable, Equatable {
 	public let x: Double
@@ -90,11 +108,9 @@ public struct Point: Decodable, Equatable {
 		// means the bytes are the wrong way around
 		var container = try decoder.unkeyedContainer()
 		let tempx = try container.decode(Double.self)
-		let swappedx = CFSwappedFloat64(v: tempx.bitPattern.littleEndian)
-		self.x = CFConvertDoubleSwappedToHost(swappedx)
+		self.x = byteSwapDouble(tempx)
 		let tempy = try container.decode(Double.self)
-		let swappedy = CFSwappedFloat64(v: tempy.bitPattern.littleEndian)
-		self.y = CFConvertDoubleSwappedToHost(swappedy)
+		self.y = byteSwapDouble(tempy)
 	}
 }
 
